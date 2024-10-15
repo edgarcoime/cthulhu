@@ -15,7 +15,7 @@ const (
 	QUEUE_NAME = "hello"
 )
 
-func failOnError(err error, msg string) {
+func FailOnError(err error, msg string) {
 	if err != nil {
 		log.Panicf("%s: %s", msg, err)
 	}
@@ -30,11 +30,11 @@ type RabbitMQService struct {
 func NewRabbitMQService() *RabbitMQService {
 	// Create Connection
 	conn, err := amqp.Dial(pkg.RABBITMQ_URL)
-	failOnError(err, "Failed to connect to RabbitMQ.")
+	FailOnError(err, "Failed to connect to RabbitMQ.")
 
 	// Create channel
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel.")
+	FailOnError(err, "Failed to open a channel.")
 
 	rmq := &RabbitMQService{
 		Conn:   conn,
@@ -72,29 +72,15 @@ func (rmq *RabbitMQService) SendMessage(qName string, msg string) error {
 			Body:        []byte(body),
 		},
 	)
-	failOnError(err, "Failed to publish a message")
+	FailOnError(err, "Failed to publish a message")
 	log.Printf(" [x] Sent %s", body)
 	return nil
 }
 
-func Run() {
-	fmt.Println("Running RabbitMQ service...")
-	rmq := NewRabbitMQService()
-	defer rmq.Close()
-
-	// Create a queue
-	qName := QUEUE_NAME
-	q, err := rmq.Ch.QueueDeclare(
-		qName, // name
-		false, // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
-	)
-	failOnError(err, "Failed to declare a queue.")
-	rmq.Queues[qName] = &q
-
-	// send Message
-	rmq.SendMessage(qName, "Hello RabbitMQ!")
-}
+// Either add rmq to middleware so its always within the request
+// Create a closure wrapper to have access to rmq
+// func WrapRMQWithHandler(rmq *RabbitMQService, handler func(rmq *RabbitMQService, c *gin.Context)) func(c *gin.Context) {
+// 	return func(c *gin.Context) {
+// 		handler(rmq, c)
+// 	}
+// }

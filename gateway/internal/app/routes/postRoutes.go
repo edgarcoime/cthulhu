@@ -6,8 +6,47 @@ import (
 	"io"
 	"net/http"
 
+	rabbit "github.com/edgarcoime/cthulhu/internal/app/rabbit"
 	"github.com/gin-gonic/gin"
 )
+
+type PostRabbitMessageRequest struct {
+	Message string `json:"message" binding:"required"`
+}
+
+func PostRabbitMessage(c *gin.Context) {
+	// Grab rmq service
+	rmq, exists := c.MustGet("rmq").(*rabbit.RabbitMQService)
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "RabbitMQ service not found.",
+			"error":   nil,
+		})
+		return
+	}
+
+	var msgReq PostRabbitMessageRequest
+	if err := c.ShouldBindJSON(&msgReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid request, please provide a valid 'message' field.",
+			"error":   err,
+		})
+		return
+	}
+
+	err := rmq.SendMessage(rabbit.QUEUE_NAME, msgReq.Message)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error Could not send message to RabbitMQ",
+			"error":   err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": msgReq.Message,
+	})
+}
 
 func GetPostsHandler(c *gin.Context) {
 	// https://blog.logrocket.com/making-http-requests-in-go/
