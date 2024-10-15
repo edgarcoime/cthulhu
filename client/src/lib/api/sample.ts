@@ -1,3 +1,7 @@
+import { API_BASE_URL } from "@/constants/api";
+
+const URL = `${API_BASE_URL}/posts`;
+
 export interface Post {
   id: string;
   title: string;
@@ -6,10 +10,8 @@ export interface Post {
 }
 
 export async function getPosts(): Promise<Post[] | null> {
-  const url = "https://jsonplaceholder.typicode.com/posts";
-
   try {
-    const res = await fetch(url);
+    const res = await fetch(URL);
 
     if (!res.ok) {
       console.log("Error fetching posts.");
