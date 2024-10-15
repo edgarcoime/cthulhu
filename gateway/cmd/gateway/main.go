@@ -55,7 +55,8 @@ func getPostHandler(c *gin.Context) {
 	postId := c.Param("id")
 	url := fmt.Sprintf("https://jsonplaceholder.typicode.com/posts/%s", postId)
 	resp, err := http.Get(url)
-	if err != nil {
+	fmt.Println(resp.StatusCode)
+	if err != nil || resp.StatusCode != http.StatusOK {
 		fmt.Println(err)
 		c.JSON(http.StatusBadGateway, gin.H{
 			"message": "Error fetching post from resource",
@@ -63,6 +64,7 @@ func getPostHandler(c *gin.Context) {
 		})
 		return
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
